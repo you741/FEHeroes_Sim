@@ -20,6 +20,10 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 	public static final int MAIN_MENU = 205;
 	public static final int ENEMY_CHARACTER = 206;
 	public static final int EDIT_ENEMY_CHARACTER = 207;
+	public static final int EDIT_MAP = 208;
+	//TERRAIN INDICES
+	public static final int GRASS = 0;
+	public static final int TREE = 1;
 	
 	private ArrayList<Weapon> weapons;
 	private ArrayList<Terrain> terrain;
@@ -41,6 +45,8 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 	private Texture downarrow;
 	private Texture down10arrow;
 	private Texture changeStats;
+	private Texture mapBG;
+	private Texture moveHand;
 	
 	private Terrain[][] map;
 	
@@ -50,6 +56,9 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 	private int step;
 	
 	private BitmapFont font;
+	
+	private Terrain selectedTerr;
+	private Hero selectedHero;
 	
 	//GRAPHIC STUFF
 	SpriteBatch batch;
@@ -62,6 +71,14 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 		createWeapons();
 		heroes = new ArrayList<Hero>();
 		createHeroes();
+		terrain = new ArrayList<Terrain>();
+		createTerrain();
+		map = new Terrain[6][8];
+		for(int i = 0;i < 6;i++){
+			for(int j = 0;j < 8;j++){
+				map[i][j] = terrain.get(GRASS);
+			}
+		}
 		team = new ArrayList<Hero>();
 		eteam = new ArrayList<Hero>();
 		mainMenuBG = new Texture("mainMenu.png");
@@ -78,9 +95,13 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 		downarrow = new Texture("down.png");
 		down10arrow = new Texture("down10.png");
 		changeStats = new Texture("changeStats.png");
+		mapBG = new Texture("mapBG.png");
+		moveHand = new Texture("move.png");
 		mode = MAIN_MENU;
 		charToEdit = 0;
 		step = 0;
+		selectedTerr = terrain.get(GRASS);
+		selectedHero = null;
 		font = new BitmapFont();
 	}
 
@@ -100,6 +121,8 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 			editEnemyTeam();
 		} else if(mode == EDIT_ENEMY_CHARACTER){
 			customizeHero();
+		} else if(mode == EDIT_MAP){
+			editMap();
 		}
 	}
 	
@@ -215,8 +238,8 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 	public void createTerrain(){
 		Terrain grass = new Terrain(new Texture("grass.png"),false,false,false);
 		terrain.add(grass);
-		Terrain bush = new Terrain(new Texture("bush.png"),true,false,false);
-		terrain.add(bush);
+		Terrain tree = new Terrain(new Texture("tree.png"),true,false,false);
+		terrain.add(tree);
 	}
 	
 	public void mainMenu(){
@@ -226,6 +249,7 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 		batch.end();
 		Rectangle editTeam = new Rectangle(0,400,600,200);
 		Rectangle editETeam = new Rectangle(0,200,600,200);
+		Rectangle editMap = new Rectangle(0,0,600,200);
 		if(Gdx.input.isButtonPressed(Input.Buttons.LEFT)){
 			if(editTeam.contains(getMx(),getMy())){
 				mode = EDIT_TEAM;
@@ -234,6 +258,18 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 		if(Gdx.input.isButtonPressed(Input.Buttons.LEFT)){
 			if(editETeam.contains(getMx(),getMy())){
 				mode = EDIT_ENEMY_TEAM;
+			}
+		}
+		if(Gdx.input.isButtonPressed(Input.Buttons.LEFT)){
+			if(editMap.contains(getMx(),getMy())){
+				for(int i = 0;i < team.size();i++){
+					team.get(i).setX(i);
+				}
+				for(int i = 0;i < eteam.size();i++){
+					eteam.get(i).setX(i);
+					eteam.get(i).setY(7);
+				}
+				mode = EDIT_MAP;
 			}
 		}
 	}
@@ -268,9 +304,36 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 				drawHeroInfo(eteam.get(i),false,new Rectangle(0,300,600,100));
 			}
 		}
-		if(team.size() < 4){
+		if(eteam.size() < 4){
 			//handles adding dudes
 			batch.draw(addHeroButton,0,0);
+		}
+		batch.end();
+	}
+	public void editMap(){
+		//edits the map
+		batch.begin();
+		batch.draw(mapBG,0,0); //draws the background
+		batch.draw(goBack,0,Gdx.graphics.getHeight()-32);
+		drawMap();//draws the map
+		batch.draw(terrain.get(GRASS).getImg(),482,600);
+		batch.draw(terrain.get(TREE).getImg(),482,520);
+		batch.draw(moveHand, 482, 0);
+		if(selectedTerr != null)
+			batch.draw(selectedTerr.getImg(), getMx()-32, getMy()-32);
+		else{
+			batch.draw(moveHand, getMx()-32, getMy()-32);
+			if(selectedHero != null){
+				batch.draw(selectedHero.getImg(), getMx()-32, getMy()-32);
+			}
+		}
+		for(int i = 0;i < team.size();i++){
+			if(team.get(i) == selectedHero) continue;
+			batch.draw(team.get(i).getImg(),team.get(i).getX()*75,team.get(i).getY()*75);
+		}
+		for(int i = 0;i < eteam.size();i++){
+			if(eteam.get(i) == selectedHero) continue;
+			batch.draw(eteam.get(i).getImg(),eteam.get(i).getX()*75,eteam.get(i).getY()*75);
 		}
 		batch.end();
 	}
@@ -324,6 +387,11 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 			batch.draw(up10arrow,455,400);
 			batch.draw(downarrow,420,385);
 			batch.draw(down10arrow,455,385);
+			font.draw(batch, "HP: "+hero.getHP(), 200, 250);
+			batch.draw(uparrow,270,250);
+			batch.draw(up10arrow,305,250);
+			batch.draw(downarrow,270,235);
+			batch.draw(down10arrow,305,235);
 		} else{
 			if(mode == EDIT_CHARACTER){
 				mode = EDIT_TEAM;	
@@ -341,7 +409,7 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 			batch.draw(enemyBackground,rect.x,rect.y);
 		}
 		font.draw(batch, hero.toString(), rect.x+15, rect.y+rect.height-20);
-		font.draw(batch, "Atk "+hero.getAtk() + " Spd "+hero.getSpd()+" Def "+hero.getDef()+" Res "+hero.getRes(), rect.x+315, rect.y+rect.height-20);
+		font.draw(batch, "HP " + hero.getHP() + "/" + hero.getMaxHP() + " Atk "+hero.getAtk() + " Spd "+hero.getSpd()+" Def "+hero.getDef()+" Res "+hero.getRes(), rect.x+315, rect.y+rect.height-20);
 		font.draw(batch, hero.getWeapon().toString(), rect.x+15, rect.y+rect.height-40);
 	}
 	public void drawHeroSmallInfo(Hero hero,boolean ally, Rectangle rect){
@@ -353,6 +421,14 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 			batch.draw(enemyBackground,rect.x+80,rect.y);
 		}
 		font.draw(batch, hero.toString(), rect.x+95, rect.y+rect.height-20);
+	}
+	public void drawMap(){
+		//draws the 6 by 8 map
+		for(int i = 0;i < 6;i++){
+			for(int j = 0;j < 8;j++){
+				batch.draw(map[i][j].getImg(),i*75,(8-j-1)*75);
+			}
+		}
 	}
 	public void createUsableWeapons(){
 		ArrayList<Hero> cteam = team;
@@ -393,6 +469,43 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+		if(mode == EDIT_MAP){
+			Rectangle backRect = new Rectangle(0,Gdx.graphics.getHeight()-32,32,32);
+			if(backRect.contains(getMx(), getMy())){
+				mode = MAIN_MENU;
+			}
+			Rectangle grassRect = new Rectangle(482,600,75,75);
+			Rectangle treeRect = new Rectangle(482,520,75,75);
+			Rectangle moveRect = new Rectangle(482,0,75,75);
+			if(grassRect.contains(getMx(),getMy())){
+				selectedHero = null;
+				selectedTerr = terrain.get(GRASS);
+			} else if(treeRect.contains(getMx(),getMy())){
+				selectedHero = null;
+				selectedTerr = terrain.get(TREE);
+			} else if(moveRect.contains(getMx(),getMy())){
+				selectedTerr = null;
+			}
+			Rectangle mapRect = new Rectangle(0,0,450,600);
+			if(mapRect.contains(getMx(),getMy())){
+				int x = (int)(getMx()/75);
+				int y = (int)((600-getMy())/75);
+				if(selectedTerr != null){
+					map[x][y] = selectedTerr;
+				} else{
+					for(int i = 0;i < team.size();i++){
+						if(team.get(i).getX() == x && team.get(i).getY() == y){
+							selectedHero = team.get(i);
+						}
+					}
+					for(int i = 0;i < eteam.size();i++){
+						if(eteam.get(i).getX() == x && eteam.get(i).getY() == y){
+							selectedHero = eteam.get(i);
+						}
+					}
+				}
+			}
+		}
 		if(mode == EDIT_TEAM){
 			Rectangle backRect = new Rectangle(0,Gdx.graphics.getHeight()-32,32,32);
 			if(backRect.contains(getMx(), getMy())){
@@ -439,7 +552,7 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 					}
 				}
 			}
-			if(team.size() < 4){
+			if(eteam.size() < 4){
 				//handles adding dudes
 				Rectangle addHero = new Rectangle(0,0,600,200); //add hero button
 				if(addHero.contains(getMx(),getMy())){
@@ -485,6 +598,10 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 			Rectangle resup10 = new Rectangle(455,400,32,16);
 			Rectangle resdown = new Rectangle(420,385,32,16);
 			Rectangle resdown10 = new Rectangle(455,385,32,16);
+			Rectangle hpup = new Rectangle(270,250,32,16);
+			Rectangle hpup10 = new Rectangle(305,250,32,16);
+			Rectangle hpdown = new Rectangle(270,235,32,16);
+			Rectangle hpdown10 = new Rectangle(305,235,32,16);
 			if(atkup.contains(getMx(),getMy())){
 				hero.setAtk(hero.getBAtk()+1);
 			} else if(atkup10.contains(getMx(),getMy())){
@@ -521,7 +638,20 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 			} else if(resdown10.contains(getMx(),getMy())){
 				hero.setRes(hero.getBRes()-10);
 			}
-			Rectangle submit = new Rectangle(0,100,600,100);
+			if(hpup.contains(getMx(),getMy())){
+				hero.setHP(hero.getMaxHP()+1);
+				hero.setMaxHp(hero.getMaxHP()+1);
+			} else if(hpup10.contains(getMx(),getMy())){
+				hero.setHP(hero.getMaxHP()+10);
+				hero.setMaxHp(hero.getMaxHP()+10);
+			} else if(hpdown.contains(getMx(),getMy())){
+				hero.setHP(hero.getMaxHP()-1);
+				hero.setMaxHp(hero.getMaxHP()-1);
+			} else if(hpdown10.contains(getMx(),getMy())){
+				hero.setHP(hero.getMaxHP()-10);
+				hero.setMaxHp(hero.getMaxHP()-10);
+			}
+			Rectangle submit = new Rectangle(0,0,600,100);
 			if(submit.contains(getMx(), getMy())){
 				step++;
 			}

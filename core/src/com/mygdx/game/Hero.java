@@ -12,6 +12,7 @@ public class Hero {
 	private Texture img;
 	private String name;
 	
+	private int hp,maxhp;
 	private int atk;
 	private int spd;
 	private int def;
@@ -44,16 +45,18 @@ public class Hero {
 	private ArrayList<Buff> buffs;
 	
 	public Hero(Texture img, String name, int moveType, int wpnType){
-		this(img,name,moveType,wpnType,0,0,0,0);
+		this(img,name,moveType,wpnType,10,0,0,0,0);
 	}
-	public Hero(Texture img, String name, int moveType, int wpnType, int atk, int spd, int def, int res){
-		this(img,name,moveType,wpnType,atk,spd,def,res,null);
+	public Hero(Texture img, String name, int moveType, int wpnType, int hp, int atk, int spd, int def, int res){
+		this(img,name,moveType,wpnType,hp,atk,spd,def,res,null);
 	}
-	public Hero(Texture img, String name, int moveType, int wpnType, int atk, int spd, int def, int res, Weapon wpn){
+	public Hero(Texture img, String name, int moveType, int wpnType, int hp, int atk, int spd, int def, int res, Weapon wpn){
 		this.img = img;
 		this.name = name;
 		this.moveType = moveType;
 		this.wpnType = wpnType;
+		this.hp = hp;
+		this.maxhp = hp;
 		this.atk = atk;
 		this.spd = spd;
 		this.def = def;
@@ -93,6 +96,12 @@ public class Hero {
 	}
 	public int getY(){
 		return y;
+	}
+	public int getHP(){
+		return hp;
+	}
+	public int getMaxHP(){
+		return maxhp;
 	}
 	public int getAtk(){
 		int finalAtk = atk + wpn.getMight() + atkBuff + wpn.getAtkInc();
@@ -200,6 +209,12 @@ public class Hero {
 	}
 	public void setY(int y){
 		this.y = y;
+	}
+	public void setHP(int hp){
+		this.hp = hp > 1? hp : 1;
+	}
+	public void setMaxHp(int maxhp){
+		this.maxhp = maxhp > 1? maxhp : 1;
 	}
 	public void setAtk(int atk){
 		this.atk = atk>0?atk:0;
@@ -326,7 +341,7 @@ public class Hero {
 		setResBuff(rb + rd);
 	}
 	public Hero clone(){
-		Hero cloned = new Hero(img, name, moveType, wpnType, atk, spd, def, res, wpn);
+		Hero cloned = new Hero(img, name, moveType, wpnType, hp, atk, spd, def, res, wpn);
 		cloned.setAtkBuff(atkBuff);
 		cloned.setSpdBuff(spdBuff);
 		cloned.setDefBuff(defBuff);
